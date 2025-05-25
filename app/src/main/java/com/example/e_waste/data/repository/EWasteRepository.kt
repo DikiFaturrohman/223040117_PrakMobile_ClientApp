@@ -1,5 +1,12 @@
 package com.example.e_waste.data.repository
 
+import com.example.e_waste.data.api.ApiService
+import com.example.e_waste.data.dao.EWasteDao
+import com.example.e_waste.data.entity.EWasteEntity
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+import javax.inject.Singleton
+
 // EWasteRepository.kt
 @Singleton
 class EWasteRepository @Inject constructor(

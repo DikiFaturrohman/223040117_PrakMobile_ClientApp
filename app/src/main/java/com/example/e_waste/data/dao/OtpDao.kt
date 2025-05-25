@@ -1,5 +1,12 @@
 package com.example.e_waste.data.dao
 
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import com.example.e_waste.data.entity.OtpEntity
+
+
 // OtpDao.kt
 @Dao
 interface OtpDao {

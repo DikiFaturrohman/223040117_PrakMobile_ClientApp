@@ -1,5 +1,22 @@
 package com.example.e_waste.data.api
 
+import com.example.e_waste.domain.model.ApiResponse
+import com.example.e_waste.domain.model.CategoryResponse
+import com.example.e_waste.domain.model.EWasteResponse
+import com.example.e_waste.domain.model.LoginRequest
+import com.example.e_waste.domain.model.OtpRequest
+import com.example.e_waste.domain.model.OtpResponse
+import com.example.e_waste.domain.model.RegisterRequest
+import com.example.e_waste.domain.model.ResetPasswordRequest
+import com.example.e_waste.domain.model.ResetPasswordResponse
+import com.example.e_waste.domain.model.TokenResponse
+import com.example.e_waste.domain.model.UserResponse
+import com.example.e_waste.domain.model.VerifyOtpRequest
+import com.example.e_waste.domain.model.VerifyOtpResponse
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.POST
+
 interface ApiService {
     @POST("auth/register")
     suspend fun register(@Body registerRequest: RegisterRequest): ApiResponse<UserResponse>

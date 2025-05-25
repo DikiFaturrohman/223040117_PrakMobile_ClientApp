@@ -1,5 +1,18 @@
 package com.example.e_waste.data.repository
 
+import com.example.e_waste.data.api.ApiService
+import com.example.e_waste.data.dao.OtpDao
+import com.example.e_waste.data.dao.UserDao
+import com.example.e_waste.data.database.AppDatabase
+import com.example.e_waste.data.entity.UserEntity
+import com.example.e_waste.domain.model.LoginRequest
+import com.example.e_waste.domain.model.OtpRequest
+import com.example.e_waste.domain.model.RegisterRequest
+import com.example.e_waste.domain.model.ResetPasswordRequest
+import com.example.e_waste.domain.model.VerifyOtpRequest
+import javax.inject.Inject
+import javax.inject.Singleton
+
 // UserRepository.kt
 @Singleton
 class UserRepository @Inject constructor(

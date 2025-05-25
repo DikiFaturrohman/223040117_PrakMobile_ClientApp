@@ -1,5 +1,9 @@
 package com.example.e_waste.data.entity
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import java.util.UUID
+
 // EWaste.kt
 @Entity(tableName = "ewastes")
 data class EWasteEntity(
