@@ -13,35 +13,66 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.e_waste.ui.theme.EwasteTheme
 
+
+// MainActivity.kt
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
-            EwasteTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+            EWasteAppTheme {
+                EWasteApp()
             }
         }
     }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    EwasteTheme {
-        Greeting("Android")
+fun EWasteApp() {
+    val navController = rememberNavController()
+    NavHost(navController = navController, startDestination = "login") {
+        composable("login") {
+            LoginScreen(
+                onNavigateToRegister = { navController.navigate("register") },
+                onNavigateToForgotPassword = { navController.navigate("forgot_password") },
+                onLoginSuccess = { navController.navigate("main") }
+            )
+        }
+        composable("register") {
+            RegisterScreen(
+                onNavigateToLogin = { navController.navigate("login") },
+                onRegisterSuccess = { navController.navigate("otp_verification/$it") }
+            )
+        }
+        composable("otp_verification/{email}") { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email") ?: ""
+            OtpVerificationScreen(
+                email = email,
+                onVerificationSuccess = { navController.navigate("login") }
+            )
+        }
+        composable("forgot_password") {
+            ForgotPasswordScreen(
+                onResetEmailSent = { email -> navController.navigate("reset_password/$email") }
+            )
+        }
+        composable("reset_password/{email}") { backStackEntry ->
+            val email = backStackEntry.arguments?.getString("email") ?: ""
+            ResetPasswordScreen(
+                email = email,
+                onPasswordResetSuccess = { navController.navigate("login") }
+            )
+        }
+        composable("main") {
+            MainScreen(
+                onNavigateToProfile = { navController.navigate("profile") },
+                onLogout = { navController.navigate("login") }
+            )
+        }
+        composable("profile") {
+            ProfileScreen(
+                onNavigateBack = { navController.navigateUp() }
+            )
+        }
     }
 }
