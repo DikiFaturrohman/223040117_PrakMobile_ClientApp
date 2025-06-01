@@ -1,4 +1,4 @@
-package com.example.e_waste.ui
+package com.example.e_waste.presentation.ui.Screen.Auth.Register
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -23,7 +23,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.e_waste.ui.viewmodels.AuthViewModel
+import com.example.e_waste.presentation.ui.viewmodels.AuthViewModel
 
 // RegisterScreen.kt
 @Composable

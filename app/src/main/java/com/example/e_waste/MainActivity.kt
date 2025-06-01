@@ -7,14 +7,14 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.e_waste.ui.ForgotPasswordScreen
-import com.example.e_waste.ui.LoginScreen
-import com.example.e_waste.ui.MainScreen
-import com.example.e_waste.ui.OtpVerificationScreen
-import com.example.e_waste.ui.ProfileScreen
-import com.example.e_waste.ui.RegisterScreen
-import com.example.e_waste.ui.ResetPasswordScreen
-import com.example.e_waste.ui.theme.EwasteTheme
+import com.example.e_waste.presentation.ui.Screen.Auth.ForgotPassword.ForgotPasswordScreen
+import com.example.e_waste.presentation.ui.Screen.Auth.Login.LoginScreen
+import com.example.e_waste.presentation.ui.Screen.Home.MainScreen
+import com.example.e_waste.presentation.ui.Screen.Auth.Otp.OtpVerificationScreen
+import com.example.e_waste.presentation.ui.Screen.User.Profile.ProfileScreen
+import com.example.e_waste.presentation.ui.Screen.Auth.Register.RegisterScreen
+import com.example.e_waste.presentation.ui.Screen.Auth.ResetPassword.ResetPasswordScreen
+import com.example.e_waste.presentation.ui.theme.EwasteTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 
@@ -39,7 +39,8 @@ fun EWasteApp() {
             LoginScreen(
                 onNavigateToRegister = { navController.navigate("register") },
                 onNavigateToForgotPassword = { navController.navigate("forgot_password") },
-                onLoginSuccess = { navController.navigate("main") }
+                onLoginSuccess = { navController.navigate("main") },
+                onForgotPassword = { navController.navigate("forgot_password") }
             )
         }
         composable("register") {

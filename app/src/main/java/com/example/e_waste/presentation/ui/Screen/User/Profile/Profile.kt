@@ -1,4 +1,4 @@
-package com.example.e_waste.ui
+package com.example.e_waste.presentation.ui.Screen.User.Profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -28,7 +28,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.e_waste.data.entity.UserEntity
-import com.example.e_waste.ui.viewmodels.ProfileViewModel
+import com.example.e_waste.presentation.ui.viewmodels.ProfileViewModel
 
 // ProfileScreen.kt
 @OptIn(ExperimentalMaterial3Api::class)

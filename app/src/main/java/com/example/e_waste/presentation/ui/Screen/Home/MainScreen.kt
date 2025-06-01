@@ -1,4 +1,4 @@
-package com.example.e_waste.ui
+package com.example.e_waste.presentation.ui.Screen.Home
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.e_waste.data.entity.EWasteEntity
-import com.example.e_waste.ui.viewmodels.EWasteViewModel
+import com.example.e_waste.presentation.ui.viewmodels.EWasteViewModel
 
 // MainScreen.kt
 @OptIn(ExperimentalMaterial3Api::class)

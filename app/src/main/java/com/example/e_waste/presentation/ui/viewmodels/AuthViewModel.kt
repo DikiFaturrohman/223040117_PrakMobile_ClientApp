@@ -1,4 +1,4 @@
-package com.example.e_waste.ui.viewmodels
+package com.example.e_waste.presentation.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

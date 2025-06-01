@@ -1,4 +1,4 @@
-package com.example.e_waste.ui
+package com.example.e_waste.presentation.ui.Screen.Auth.Otp
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -15,7 +15,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.e_waste.ui.viewmodels.AuthViewModel
+import com.example.e_waste.presentation.ui.viewmodels.AuthViewModel
 
 // OtpVerificationScreen.kt
 @Composable
