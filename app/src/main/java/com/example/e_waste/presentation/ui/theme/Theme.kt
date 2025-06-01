@@ -16,27 +16,24 @@ private val DarkColorScheme = darkColorScheme(
     tertiary = Pink80
 )
 
+// Definisikan LightColorScheme menggunakan warna kustom kita
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
+    primary = EWasteGreen,
+    onPrimary = EWasteWhite,
     secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    tertiary = Pink40,
+    background = EWasteGreen,      // Latar belakang utama (hijau)
+    surface = EWasteWhite,         // Warna kartu (putih)
+    onBackground = EWasteWhite,    // Teks di atas latar belakang utama
+    onSurface = EWasteBlack,       // Teks di atas kartu
+    onSurfaceVariant = EWasteGray  // Warna untuk teks sekunder/abu-abu
 )
 
 @Composable
 fun EwasteTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // Dinonaktifkan agar tema kustom kita yang dipakai
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -46,7 +43,7 @@ fun EwasteTheme(
         }
 
         darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        else -> LightColorScheme // Gunakan LightColorScheme kustom kita
     }
 
     MaterialTheme(

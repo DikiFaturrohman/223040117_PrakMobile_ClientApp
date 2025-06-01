@@ -3,8 +3,10 @@ package com.example.e_waste.presentation.ui.Screen.Auth.Login
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -28,8 +30,7 @@ fun LoginScreen(
     onNavigateToForgotPassword: () -> Unit,
     onForgotPassword: () -> Unit
 ) {
-    // Assuming AuthViewModel has authState property
-    var selectedTab by remember { mutableStateOf(0) } // 0 = Masuk, 1 = Daftar
+    var selectedTab by remember { mutableStateOf(0) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -38,41 +39,37 @@ fun LoginScreen(
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
-    // Custom colors matching the design
-    val primaryGreen = Color(0xFF4ECDC4)
-    val backgroundColor = Color(0xFF4ECDC4)
-    val cardBackgroundColor = Color.White
-
-    // Handle login/register actions
     fun handleLogin() {
+        // ... (logika login)
         isLoading = true
-        errorMessage = ""
-        // Call your login logic here
-        // viewModel.login(email, password)
-        // For now, simulate success after delay
-        isLoading = false
-        onLoginSuccess()
+        if (email.isNotEmpty() && password.isNotEmpty()) {
+            onLoginSuccess()
+        } else {
+            errorMessage = "Email dan password tidak boleh kosong."
+            isLoading = false
+        }
     }
 
     fun handleRegister() {
+        // ... (logika register)
         isLoading = true
-        errorMessage = ""
         if (password != confirmPassword) {
             errorMessage = "Password tidak cocok"
             isLoading = false
             return
         }
-        // Call your register logic here
-        // viewModel.register(email, password)
-        // For now, simulate success after delay
-        isLoading = false
-        onLoginSuccess()
+        if (email.isNotEmpty() && password.isNotEmpty()) {
+            onNavigateToRegister()
+        } else {
+            errorMessage = "Email dan password tidak boleh kosong."
+            isLoading = false
+        }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(backgroundColor)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -82,13 +79,12 @@ fun LoginScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(0.4f),
+                    .weight(0.3f), // PERUBAHAN: dari 0.4f menjadi 0.3f
                 contentAlignment = Alignment.Center
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Logo placeholder - replace with your actual logo
                     Box(
                         modifier = Modifier
                             .size(80.dp)
@@ -101,24 +97,21 @@ fun LoginScreen(
                         Text(
                             text = "♻",
                             fontSize = 40.sp,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                     }
-
                     Spacer(modifier = Modifier.height(16.dp))
-
                     Text(
                         text = "E-Waste",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onBackground
                     )
-
                     Text(
                         text = "MANAGEMENT",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Normal,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onBackground,
                         letterSpacing = 2.sp
                     )
                 }
@@ -128,302 +121,118 @@ fun LoginScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(0.6f),
+                    .weight(0.7f), // PERUBAHAN: dari 0.6f menjadi 0.7f
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                colors = CardDefaults.cardColors(containerColor = cardBackgroundColor)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(24.dp)
+                        .verticalScroll(rememberScrollState())
                 ) {
                     // Tabs
-                    Row(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        // Masuk Tab
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { selectedTab = 0 }
-                                .padding(vertical = 12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column {
-                                Text(
-                                    text = "Masuk",
-                                    fontSize = 16.sp,
-                                    fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (selectedTab == 0) Color.Black else Color.Gray
-                                )
-                                if (selectedTab == 0) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(2.dp)
-                                            .background(primaryGreen)
-                                    )
-                                }
-                            }
-                        }
-
-                        // Daftar Tab
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { selectedTab = 1 }
-                                .padding(vertical = 12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column {
-                                Text(
-                                    text = "Daftar",
-                                    fontSize = 16.sp,
-                                    fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (selectedTab == 1) Color.Black else Color.Gray
-                                )
-                                if (selectedTab == 1) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(2.dp)
-                                            .background(primaryGreen)
-                                    )
-                                }
-                            }
-                        }
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        TabItem(
+                            text = "Masuk",
+                            isSelected = selectedTab == 0,
+                            onClick = { selectedTab = 0 }
+                        )
+                        TabItem(
+                            text = "Daftar",
+                            isSelected = selectedTab == 1,
+                            onClick = { selectedTab = 1 }
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Welcome text
                     Text(
                         text = if (selectedTab == 0) "Halo!" else "Daftar Akun",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Text(
-                        text = if (selectedTab == 0)
-                            "Sudah punya akun? Silakan login."
-                        else
-                            "Buat akun baru untuk memulai.",
+                        text = if (selectedTab == 0) "Sudah punya akun? Silakan login." else "Buat akun baru untuk memulai.",
                         fontSize = 14.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 24.dp)
                     )
 
                     // Form fields
                     if (selectedTab == 0) {
                         // Login Form
-                        OutlinedTextField(
+                        AuthTextField(
                             value = email,
                             onValueChange = { email = it },
-                            label = { Text("Alamat Email") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 16.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = primaryGreen,
-                                focusedLabelColor = primaryGreen
-                            )
+                            label = "Alamat Email",
+                            keyboardType = KeyboardType.Email
                         )
-
-                        OutlinedTextField(
+                        PasswordTextField(
                             value = password,
                             onValueChange = { password = it },
-                            label = { Text("Kata Sandi") },
-                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailingIcon = {
-                                val image = if (passwordVisible)
-                                    Icons.Filled.Visibility
-                                else Icons.Filled.VisibilityOff
-
-                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                    Icon(imageVector = image, contentDescription = null)
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 8.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = primaryGreen,
-                                focusedLabelColor = primaryGreen
-                            )
+                            label = "Kata Sandi",
+                            isVisible = passwordVisible,
+                            onVisibilityChange = { passwordVisible = !passwordVisible }
                         )
-
-                        // Forgot Password
                         Text(
                             text = "Lupa Kata Sandi?",
-                            color = primaryGreen,
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 14.sp,
                             modifier = Modifier
                                 .align(Alignment.End)
                                 .clickable { onForgotPassword() }
                                 .padding(bottom = 24.dp)
                         )
-
-                        // Login Button
-                        Button(
-                            onClick = { handleLogin() },
-                            enabled = email.isNotEmpty() && password.isNotEmpty() && !isLoading,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = primaryGreen),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            if (isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    color = Color.White
-                                )
-                            } else {
-                                Text(
-                                    text = "Masuk",
-                                    color = Color.White,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
-
+                        AuthButton(
+                            text = "Masuk",
+                            isLoading = isLoading,
+                            onClick = { handleLogin() }
+                        )
                         Spacer(modifier = Modifier.height(16.dp))
-
-                        // Register link
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "Belum punya akun? ",
-                                color = Color.Gray,
-                                fontSize = 14.sp
-                            )
-                            Text(
-                                text = "Daftar",
-                                color = primaryGreen,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.clickable { selectedTab = 1 }
-                            )
-                        }
+                        AuthSwitchLink(
+                            promptText = "Belum punya akun? ",
+                            linkText = "Daftar",
+                            onClick = { selectedTab = 1 }
+                        )
                     } else {
                         // Register Form
-                        OutlinedTextField(
+                        AuthTextField(
                             value = email,
                             onValueChange = { email = it },
-                            label = { Text("Alamat Email") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 16.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = primaryGreen,
-                                focusedLabelColor = primaryGreen
-                            )
+                            label = "Alamat Email",
+                            keyboardType = KeyboardType.Email
                         )
-
-                        OutlinedTextField(
+                        PasswordTextField(
                             value = password,
                             onValueChange = { password = it },
-                            label = { Text("Kata Sandi") },
-                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailingIcon = {
-                                val image = if (passwordVisible)
-                                    Icons.Filled.Visibility
-                                else Icons.Filled.VisibilityOff
-
-                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                    Icon(imageVector = image, contentDescription = null)
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 16.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = primaryGreen,
-                                focusedLabelColor = primaryGreen
-                            )
+                            label = "Kata Sandi",
+                            isVisible = passwordVisible,
+                            onVisibilityChange = { passwordVisible = !passwordVisible }
                         )
-
-                        OutlinedTextField(
+                        PasswordTextField(
                             value = confirmPassword,
                             onValueChange = { confirmPassword = it },
-                            label = { Text("Konfirmasi Kata Sandi") },
-                            visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailingIcon = {
-                                val image = if (confirmPasswordVisible)
-                                    Icons.Filled.Visibility
-                                else Icons.Filled.VisibilityOff
-
-                                IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                                    Icon(imageVector = image, contentDescription = null)
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 24.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = primaryGreen,
-                                focusedLabelColor = primaryGreen
-                            )
+                            label = "Konfirmasi Kata Sandi",
+                            isVisible = confirmPasswordVisible,
+                            onVisibilityChange = { confirmPasswordVisible = !confirmPasswordVisible },
+                            modifier = Modifier.padding(bottom = 24.dp)
                         )
-
-                        // Register Button
-                        Button(
-                            onClick = { handleRegister() },
-                            enabled = email.isNotEmpty() && password.isNotEmpty() &&
-                                    confirmPassword.isNotEmpty() && !isLoading,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = primaryGreen),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            if (isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    color = Color.White
-                                )
-                            } else {
-                                Text(
-                                    text = "Daftar",
-                                    color = Color.White,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
-
+                        AuthButton(
+                            text = "Daftar",
+                            isLoading = isLoading,
+                            onClick = { handleRegister() }
+                        )
                         Spacer(modifier = Modifier.height(16.dp))
-
-                        // Login link
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "Sudah punya akun? ",
-                                color = Color.Gray,
-                                fontSize = 14.sp
-                            )
-                            Text(
-                                text = "Masuk",
-                                color = primaryGreen,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.clickable { selectedTab = 0 }
-                            )
-                        }
+                        AuthSwitchLink(
+                            promptText = "Sudah punya akun? ",
+                            linkText = "Masuk",
+                            onClick = { selectedTab = 0 }
+                        )
                     }
 
-                    // Error message
                     if (errorMessage.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
@@ -437,5 +246,135 @@ fun LoginScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun RowScope.TabItem(text: String, isSelected: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .weight(1f)
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = text,
+                fontSize = 16.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (isSelected) {
+                Box(
+                    modifier = Modifier
+                        .width(40.dp)
+                        .height(2.dp)
+                        .background(MaterialTheme.colorScheme.primary)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AuthTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    modifier: Modifier = Modifier
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            focusedLabelColor = MaterialTheme.colorScheme.primary
+        )
+    )
+}
+
+@Composable
+private fun PasswordTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    isVisible: Boolean,
+    onVisibilityChange: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        visualTransformation = if (isVisible) VisualTransformation.None else PasswordVisualTransformation(),
+        trailingIcon = {
+            val image = if (isVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+            IconButton(onClick = onVisibilityChange) {
+                Icon(imageVector = image, contentDescription = "Toggle password visibility")
+            }
+        },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            focusedLabelColor = MaterialTheme.colorScheme.primary
+        )
+    )
+}
+
+@Composable
+private fun AuthButton(text: String, isLoading: Boolean, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        enabled = !isLoading,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                color = MaterialTheme.colorScheme.onPrimary
+            )
+        } else {
+            Text(
+                text = text,
+                color = MaterialTheme.colorScheme.onPrimary,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+@Composable
+private fun AuthSwitchLink(promptText: String, linkText: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = promptText,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 14.sp
+        )
+        Text(
+            text = linkText,
+            color = MaterialTheme.colorScheme.primary,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.clickable(onClick = onClick)
+        )
     }
 }
