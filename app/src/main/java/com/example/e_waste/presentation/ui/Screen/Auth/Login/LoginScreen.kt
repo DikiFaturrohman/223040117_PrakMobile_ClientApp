@@ -30,12 +30,9 @@ fun LoginScreen(
     onNavigateToForgotPassword: () -> Unit,
     onForgotPassword: () -> Unit
 ) {
-    var selectedTab by remember { mutableStateOf(0) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var confirmPasswordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
@@ -44,22 +41,6 @@ fun LoginScreen(
         isLoading = true
         if (email.isNotEmpty() && password.isNotEmpty()) {
             onLoginSuccess()
-        } else {
-            errorMessage = "Email dan password tidak boleh kosong."
-            isLoading = false
-        }
-    }
-
-    fun handleRegister() {
-        // ... (logika register)
-        isLoading = true
-        if (password != confirmPassword) {
-            errorMessage = "Password tidak cocok"
-            isLoading = false
-            return
-        }
-        if (email.isNotEmpty() && password.isNotEmpty()) {
-            onNavigateToRegister()
         } else {
             errorMessage = "Email dan password tidak boleh kosong."
             isLoading = false
@@ -131,107 +112,56 @@ fun LoginScreen(
                         .padding(24.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    // Tabs
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        TabItem(
-                            text = "Masuk",
-                            isSelected = selectedTab == 0,
-                            onClick = { selectedTab = 0 }
-                        )
-                        TabItem(
-                            text = "Daftar",
-                            isSelected = selectedTab == 1,
-                            onClick = { selectedTab = 1 }
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
                     Text(
-                        text = if (selectedTab == 0) "Halo!" else "Daftar Akun",
+                        text = "Halo!",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Text(
-                        text = if (selectedTab == 0) "Sudah punya akun? Silakan login." else "Buat akun baru untuk memulai.",
+                        text = "Sudah punya akun? Silakan login.",
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 24.dp)
                     )
 
                     // Form fields
-                    if (selectedTab == 0) {
-                        // Login Form
-                        AuthTextField(
-                            value = email,
-                            onValueChange = { email = it },
-                            label = "Alamat Email",
-                            keyboardType = KeyboardType.Email
-                        )
-                        PasswordTextField(
-                            value = password,
-                            onValueChange = { password = it },
-                            label = "Kata Sandi",
-                            isVisible = passwordVisible,
-                            onVisibilityChange = { passwordVisible = !passwordVisible }
-                        )
-                        Text(
-                            text = "Lupa Kata Sandi?",
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 14.sp,
-                            modifier = Modifier
-                                .align(Alignment.End)
-                                .clickable { onForgotPassword() }
-                                .padding(bottom = 24.dp)
-                        )
-                        AuthButton(
-                            text = "Masuk",
-                            isLoading = isLoading,
-                            onClick = { handleLogin() }
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        AuthSwitchLink(
-                            promptText = "Belum punya akun? ",
-                            linkText = "Daftar",
-                            onClick = { selectedTab = 1 }
-                        )
-                    } else {
-                        // Register Form
-                        AuthTextField(
-                            value = email,
-                            onValueChange = { email = it },
-                            label = "Alamat Email",
-                            keyboardType = KeyboardType.Email
-                        )
-                        PasswordTextField(
-                            value = password,
-                            onValueChange = { password = it },
-                            label = "Kata Sandi",
-                            isVisible = passwordVisible,
-                            onVisibilityChange = { passwordVisible = !passwordVisible }
-                        )
-                        PasswordTextField(
-                            value = confirmPassword,
-                            onValueChange = { confirmPassword = it },
-                            label = "Konfirmasi Kata Sandi",
-                            isVisible = confirmPasswordVisible,
-                            onVisibilityChange = { confirmPasswordVisible = !confirmPasswordVisible },
-                            modifier = Modifier.padding(bottom = 24.dp)
-                        )
-                        AuthButton(
-                            text = "Daftar",
-                            isLoading = isLoading,
-                            onClick = { handleRegister() }
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        AuthSwitchLink(
-                            promptText = "Sudah punya akun? ",
-                            linkText = "Masuk",
-                            onClick = { selectedTab = 0 }
-                        )
-                    }
+                    // Login Form
+                    AuthTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = "Alamat Email",
+                        keyboardType = KeyboardType.Email
+                    )
+                    PasswordTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = "Kata Sandi",
+                        isVisible = passwordVisible,
+                        onVisibilityChange = { passwordVisible = !passwordVisible }
+                    )
+                    Text(
+                        text = "Lupa Kata Sandi?",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 14.sp,
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .clickable { onForgotPassword() }
+                            .padding(bottom = 24.dp)
+                    )
+                    AuthButton(
+                        text = "Masuk",
+                        isLoading = isLoading,
+                        onClick = { handleLogin() }
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    AuthSwitchLink(
+                        promptText = "Belum punya akun? ",
+                        linkText = "Daftar",
+                        onClick = { onNavigateToRegister() }
+                    )
+
 
                     if (errorMessage.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -244,34 +174,6 @@ fun LoginScreen(
                         )
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun RowScope.TabItem(text: String, isSelected: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .weight(1f)
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = text,
-                fontSize = 16.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            if (isSelected) {
-                Box(
-                    modifier = Modifier
-                        .width(40.dp)
-                        .height(2.dp)
-                        .background(MaterialTheme.colorScheme.primary)
-                )
             }
         }
     }
