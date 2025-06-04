@@ -60,6 +60,16 @@ class UserRepository @Inject constructor(
         }
     }
 
+    suspend fun getUserByEmail(email: String): UserEntity? {
+        return try {
+            userDao.getUserByEmail(email)
+        } catch (e: Exception) {
+            // Tangani error jika diperlukan, misalnya log atau return null
+            // Log.e("UserRepository", "Error getting user by email", e)
+            null
+        }
+    }
+
     suspend fun sendOtp(email: String): Result<Boolean> {
         return try {
             val response = apiService.sendOtp(OtpRequest(email))

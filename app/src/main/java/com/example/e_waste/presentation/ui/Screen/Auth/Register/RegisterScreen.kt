@@ -15,6 +15,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -22,250 +24,188 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.e_waste.presentation.ui.viewmodels.AuthViewModel
 
 @Composable
 fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
-    onRegisterSuccess: (String) -> Unit,
+    onRegisterSuccessNavigateToOtp: (String) -> Unit, // Pass email to OTP screen
     viewModel: AuthViewModel = hiltViewModel()
 ) {
-    val registerState by viewModel.registerState.collectAsState()
-    val otpState by viewModel.otpState.collectAsState()
-
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
-    var isPasswordVisible by remember { mutableStateOf(false) }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
 
-    LaunchedEffect(registerState, otpState) {
-        if (registerState is AuthViewModel.AuthState.Success && otpState is AuthViewModel.OtpState.OtpSent) {
-            onRegisterSuccess(email)
+    val authState by viewModel.authState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var localError by remember { mutableStateOf<String?>(null) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                if (!authState.registrationSuccess) {
+                    viewModel.resetAuthState()
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
+    LaunchedEffect(authState.registrationSuccess) {
+        if (authState.registrationSuccess) {
+            authState.loggedInUserEmail?.let { userEmail ->
+                onRegisterSuccessNavigateToOtp(userEmail)
+                viewModel.resetAuthState() // Reset after navigation
+            }
+        }
+    }
+
+    LaunchedEffect(authState.error) {
+        authState.error?.let {
+            snackbarHostState.showSnackbar(message = it)
+            viewModel.clearError()
+        }
+    }
+    LaunchedEffect(localError) {
+        localError?.let {
+            snackbarHostState.showSnackbar(message = it)
+            localError = null // Clear error after showing
+        }
+    }
+
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
         Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 24.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            // Top section with logo (sama seperti LoginScreen)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(0.3f),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .background(
-                                Color.White.copy(alpha = 0.2f),
-                                RoundedCornerShape(16.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "♻",
-                            fontSize = 40.sp,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "E-Waste",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = "MANAGEMENT",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        letterSpacing = 2.sp
-                    )
-                }
-            }
+            Text(
+                "Create Account",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                "Sign up to get started",
+                fontSize = 16.sp,
+                color = Color.Gray
+            )
+            Spacer(modifier = Modifier.height(30.dp))
 
-            // Bottom section with form
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(0.7f),
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column(
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Full Name") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = phone,
+                onValueChange = { phone = it },
+                label = { Text("Phone Number") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                trailingIcon = {
+                    val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(imageVector = image, contentDescription = if (passwordVisible) "Hide password" else "Show password")
+                    }
+                }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                label = { Text("Confirm Password") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                trailingIcon = {
+                    val image = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        Icon(imageVector = image, contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password")
+                    }
+                }
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+
+            if (authState.isLoading) {
+                CircularProgressIndicator()
+            } else {
+                Button(
+                    onClick = {
+                        localError = null // Clear previous local errors
+                        if (name.isBlank() || email.isBlank() || phone.isBlank() || password.isBlank()) {
+                            localError = "All fields are required."
+                            return@Button
+                        }
+                        if (password != confirmPassword) {
+                            localError = "Passwords do not match."
+                            return@Button
+                        }
+                        viewModel.register(name, email, phone, password)
+                    },
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp)
-                        .verticalScroll(rememberScrollState())
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text(
-                        text = "Create Account",
-                        style = MaterialTheme.typography.headlineLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Buat akun baru untuk memulai.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 24.dp)
-                    )
-
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Nama Lengkap") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            focusedLabelColor = MaterialTheme.colorScheme.primary
-                        )
-                    )
-
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Alamat Email") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            focusedLabelColor = MaterialTheme.colorScheme.primary
-                        )
-                    )
-
-                    OutlinedTextField(
-                        value = phone,
-                        onValueChange = { phone = it },
-                        label = { Text("Nomor Telepon") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            focusedLabelColor = MaterialTheme.colorScheme.primary
-                        )
-                    )
-
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Kata Sandi") },
-                        visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        trailingIcon = {
-                            IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                                Icon(
-                                    imageVector = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                    contentDescription = "Toggle password visibility"
-                                )
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            focusedLabelColor = MaterialTheme.colorScheme.primary
-                        )
-                    )
-
-                    OutlinedTextField(
-                        value = confirmPassword,
-                        onValueChange = { confirmPassword = it },
-                        label = { Text("Konfirmasi Kata Sandi") },
-                        visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        isError = password != confirmPassword && confirmPassword.isNotEmpty(),
-                        supportingText = {
-                            if (password != confirmPassword && confirmPassword.isNotEmpty()) {
-                                Text("Passwords don't match", color = MaterialTheme.colorScheme.error)
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 24.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            focusedLabelColor = MaterialTheme.colorScheme.primary,
-                            errorBorderColor = MaterialTheme.colorScheme.error,
-                            errorLabelColor = MaterialTheme.colorScheme.error
-                        )
-                    )
-
-                    Button(
-                        onClick = {
-                            viewModel.register(name, email, password, phone)
-                            viewModel.sendOtp(email)
-                        },
-                        enabled = name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty() &&
-                                phone.isNotEmpty() && password == confirmPassword &&
-                                registerState !is AuthViewModel.AuthState.Loading,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                    ) {
-                        if (registerState is AuthViewModel.AuthState.Loading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                        } else {
-                            Text("Daftar", color = MaterialTheme.colorScheme.onPrimary, fontSize = 16.sp)
-                        }
-                    }
-
-                    if (registerState is AuthViewModel.AuthState.Error) {
-                        Text(
-                            text = (registerState as AuthViewModel.AuthState.Error).message,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier
-                                .padding(vertical = 8.dp)
-                                .align(Alignment.CenterHorizontally)
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Sudah punya akun?",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        TextButton(onClick = onNavigateToLogin) {
-                            Text("Masuk", color = MaterialTheme.colorScheme.primary)
-                        }
-                    }
+                    Text("Register", fontSize = 18.sp)
                 }
             }
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row {
+                Text("Already have an account? ")
+                Text(
+                    "Login",
+                    modifier = Modifier.clickable { onNavigateToLogin() },
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
