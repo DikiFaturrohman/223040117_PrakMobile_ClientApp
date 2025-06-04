@@ -13,170 +13,157 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.e_waste.presentation.ui.viewmodels.AuthViewModel
 
-// ResetPasswordScreen.kt
 @Composable
 fun ResetPasswordScreen(
-    email: String,
+    email: String, // Email that has been OTP verified
     onPasswordResetSuccess: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
-    val loginState by viewModel.loginState.collectAsState()
-    val otpState by viewModel.otpState.collectAsState()
-
-    var otp by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var isPasswordVisible by remember { mutableStateOf(false) }
-    var isOtpVerified by remember { mutableStateOf(false) }
+    var confirmNewPassword by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
 
-    LaunchedEffect(otpState) {
-        if (otpState is AuthViewModel.OtpState.OtpVerified) {
-            isOtpVerified = true
-        }
-    }
+    val authState by viewModel.authState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var localError by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(loginState) {
-        if (loginState is AuthViewModel.AuthState.Success) {
-            onPasswordResetSuccess()
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Reset Password",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
-
-        if (!isOtpVerified) {
-            Text(
-                text = "Enter the verification code sent to $email",
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            OutlinedTextField(
-                value = otp,
-                onValueChange = { if (it.length <= 6) otp = it },
-                label = { Text("Enter 6-digit OTP") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            )
-
-            Button(
-                onClick = { viewModel.verifyOtp(email, otp) },
-                enabled = otp.length == 6 && otpState !is AuthViewModel.OtpState.Loading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp)
-            ) {
-                if (otpState is AuthViewModel.OtpState.Loading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text("Verify Code")
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                if (!authState.passwordResetSuccess) {
+                    viewModel.resetAuthState()
                 }
             }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
-            TextButton(
-                onClick = { viewModel.sendOtp(email) },
-                enabled = otpState !is AuthViewModel.OtpState.Loading
-            ) {
-                Text("Resend Code")
-            }
+    LaunchedEffect(authState.passwordResetSuccess) {
+        if (authState.passwordResetSuccess) {
+            onPasswordResetSuccess()
+            viewModel.resetAuthState() // Reset after navigation
+        }
+    }
 
-            if (otpState is AuthViewModel.OtpState.Error) {
-                Text(
-                    text = (otpState as AuthViewModel.OtpState.Error).message,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
-        } else {
+    LaunchedEffect(authState.error) {
+        authState.error?.let {
+            snackbarHostState.showSnackbar(message = it)
+            viewModel.clearError()
+        }
+    }
+    LaunchedEffect(localError) {
+        localError?.let {
+            snackbarHostState.showSnackbar(message = it)
+            localError = null // Clear error after showing
+        }
+    }
+
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Reset Password",
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Enter your new password for $email.",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+
             OutlinedTextField(
                 value = newPassword,
                 onValueChange = { newPassword = it },
                 label = { Text("New Password") },
-                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                singleLine = true,
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 trailingIcon = {
-                    IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
-                        Icon(
-                            imageVector = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = "Toggle password visibility"
-                        )
+                    val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(imageVector = image, contentDescription = if (passwordVisible) "Hide password" else "Show password")
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                modifier = Modifier.fillMaxWidth()
             )
+            Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = confirmPassword,
-                onValueChange = { confirmPassword = it },
-                label = { Text("Confirm Password") },
-                visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                value = confirmNewPassword,
+                onValueChange = { confirmNewPassword = it },
+                label = { Text("Confirm New Password") },
+                singleLine = true,
+                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                isError = newPassword != confirmPassword && confirmPassword.isNotEmpty(),
-                supportingText = {
-                    if (newPassword != confirmPassword && confirmPassword.isNotEmpty()) {
-                        Text("Passwords don't match", color = MaterialTheme.colorScheme.error)
+                trailingIcon = {
+                    val image = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        Icon(imageVector = image, contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password")
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                modifier = Modifier.fillMaxWidth()
             )
+            Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
-                onClick = { viewModel.resetPassword(email, newPassword) },
-                enabled = newPassword.isNotEmpty() && newPassword == confirmPassword &&
-                        loginState !is AuthViewModel.AuthState.Loading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp)
-            ) {
-                if (loginState is AuthViewModel.AuthState.Loading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
+            if (authState.isLoading) {
+                CircularProgressIndicator()
+            } else {
+                Button(
+                    onClick = {
+                        localError = null // Clear previous local errors
+                        if (newPassword.isBlank() || confirmNewPassword.isBlank()) {
+                            localError = "Password fields cannot be empty."
+                            return@Button
+                        }
+                        if (newPassword.length < 6) { // Example validation
+                            localError = "Password must be at least 6 characters."
+                            return@Button
+                        }
+                        if (newPassword != confirmNewPassword) {
+                            localError = "Passwords do not match."
+                            return@Button
+                        }
+                        viewModel.resetPassword(email, newPassword)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text("Reset Password")
                 }
-            }
-
-            if (loginState is AuthViewModel.AuthState.Error) {
-                Text(
-                    text = (loginState as AuthViewModel.AuthState.Error).message,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
             }
         }
     }

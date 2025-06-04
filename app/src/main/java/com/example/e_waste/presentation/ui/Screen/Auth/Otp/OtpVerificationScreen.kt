@@ -6,92 +6,125 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.e_waste.presentation.ui.viewmodels.AuthViewModel
 
-// OtpVerificationScreen.kt
 @Composable
 fun OtpVerificationScreen(
     email: String,
-    onVerificationSuccess: () -> Unit,
+    isForRegistration: Boolean,
+    onVerificationSuccessForRegistration: () -> Unit,
+    onVerificationSuccessForPasswordReset: (String) -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
-    val otpState by viewModel.otpState.collectAsState()
     var otp by remember { mutableStateOf("") }
+    val authState by viewModel.authState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(otpState) {
-        if (otpState is AuthViewModel.OtpState.OtpVerified) {
-            onVerificationSuccess()
+    // Reset state when screen is disposed or left
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP ) {
+                if (!authState.otpVerified) { // Don't reset if navigating away due to success
+                    viewModel.resetAuthState()
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Verify Your Email",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        Text(
-            text = "We've sent a verification code to $email",
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(bottom = 32.dp)
-        )
-
-        OutlinedTextField(
-            value = otp,
-            onValueChange = { if (it.length <= 6) otp = it },
-            label = { Text("Enter 6-digit OTP") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-        )
-
-        Button(
-            onClick = { viewModel.verifyOtp(email, otp) },
-            enabled = otp.length == 6 && otpState !is AuthViewModel.OtpState.Loading,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp)
-        ) {
-            if (otpState is AuthViewModel.OtpState.Loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
+    LaunchedEffect(authState.otpVerified) {
+        if (authState.otpVerified) {
+            if (isForRegistration) {
+                onVerificationSuccessForRegistration()
             } else {
-                Text("Verify")
+                onVerificationSuccessForPasswordReset(email) // Pass email to reset password screen
             }
+            viewModel.resetAuthState() // Reset state after navigation
         }
+    }
 
-        if (otpState is AuthViewModel.OtpState.Error) {
-            Text(
-                text = (otpState as AuthViewModel.OtpState.Error).message,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
+    LaunchedEffect(authState.error) {
+        authState.error?.let {
+            snackbarHostState.showSnackbar(message = it)
+            viewModel.clearError()
         }
+    }
 
-        TextButton(
-            onClick = { viewModel.sendOtp(email) },
-            enabled = otpState !is AuthViewModel.OtpState.Loading
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Resend Code")
+            Text(
+                text = "Verify OTP",
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "An OTP has been sent to $email. Please enter it below.",
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+
+            OutlinedTextField(
+                value = otp,
+                onValueChange = { if (it.length <= 6) otp = it }, // Assuming OTP is 6 digits
+                label = { Text("OTP Code") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+
+            if (authState.isLoading) {
+                CircularProgressIndicator()
+            } else {
+                Button(
+                    onClick = {
+                        if (otp.isNotBlank() && email.isNotBlank()) {
+                            viewModel.verifyOtp(email, otp)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = otp.length == 6 // Example: enable only if OTP has 6 digits
+                ) {
+                    Text("Verify OTP")
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            TextButton(onClick = {
+                // Resend OTP logic
+                viewModel.sendOtp(email) // Re-use sendOtp
+            }) {
+                Text("Resend OTP")
+            }
         }
     }
 }
