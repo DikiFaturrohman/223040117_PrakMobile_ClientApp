@@ -33,6 +33,7 @@ import com.example.e_waste.presentation.ui.viewmodels.EWasteViewModel
 @Composable
 fun MainScreen(
     onNavigateToProfile: () -> Unit,
+    onNavigateToTips: () -> Unit,
     onLogout: () -> Unit,
     viewModel: EWasteViewModel = hiltViewModel()
 ) {

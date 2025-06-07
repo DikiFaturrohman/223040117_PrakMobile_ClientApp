@@ -19,6 +19,7 @@ import com.example.e_waste.presentation.ui.Screen.Auth.Login.LoginScreen
 import com.example.e_waste.presentation.ui.Screen.Home.MainScreen
 import com.example.e_waste.presentation.ui.Screen.User.Profile.ProfileScreen
 import com.example.e_waste.presentation.ui.Screen.Auth.Register.RegisterScreen
+import com.example.e_waste.presentation.ui.Screen.Tips.TipsScreen
 import com.example.e_waste.presentation.ui.theme.EwasteTheme
 import com.example.e_waste.presentation.ui.viewmodels.AuthViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -29,6 +30,7 @@ object AppDestinations {
     // FORGOT_PASSWORD, OTP_VERIFICATION, RESET_PASSWORD dihapus
     const val MAIN_ROUTE = "main"
     const val PROFILE_ROUTE = "profile"
+    const val TIPS_ROUTE = "tips"
 }
 
 @AndroidEntryPoint
@@ -82,6 +84,7 @@ fun EWasteApp(navController: NavHostController = rememberNavController()) {
         composable(AppDestinations.MAIN_ROUTE) {
             MainScreen(
                 onNavigateToProfile = { navController.navigate(AppDestinations.PROFILE_ROUTE) },
+                onNavigateToTips = { navController.navigate(AppDestinations.TIPS_ROUTE) }, // <-- TAMBAHKAN INI
                 onLogout = {
                     authViewModel.logout() // Panggil fungsi logout di ViewModel
                     navController.navigate(AppDestinations.LOGIN_ROUTE) {
@@ -94,6 +97,12 @@ fun EWasteApp(navController: NavHostController = rememberNavController()) {
             ProfileScreen(
                 onNavigateBack = { navController.popBackStack() }
                 // onNavigateToChangePassword dihapus
+            )
+        }
+
+        composable(AppDestinations.TIPS_ROUTE) {
+            TipsScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }
