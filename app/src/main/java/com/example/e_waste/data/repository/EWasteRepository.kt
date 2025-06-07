@@ -3,11 +3,11 @@ package com.example.e_waste.data.repository
 import com.example.e_waste.data.api.ApiService
 import com.example.e_waste.data.dao.EWasteDao
 import com.example.e_waste.data.entity.EWasteEntity
+import com.example.e_waste.domain.model.EWaste
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
 
-// EWasteRepository.kt
 @Singleton
 class EWasteRepository @Inject constructor(
     private val eWasteDao: EWasteDao,
@@ -17,41 +17,28 @@ class EWasteRepository @Inject constructor(
         return eWasteDao.getAllEWastes()
     }
 
-    fun getEWastesByCategory(category: String): Flow<List<EWasteEntity>> {
-        return eWasteDao.getEWastesByCategory(category)
-    }
-
+    // Fungsi untuk refresh data dari API
     suspend fun refreshEWastes() {
         try {
             val response = apiService.getEWastes()
-            if (response.success) {
-                val eWastes = response.data.map {
-                    EWasteEntity(
-                        id = it.id,
-                        name = it.name,
-                        category = it.category,
-                        description = it.description,
-                        imageUrl = it.imageUrl,
-                        disposalMethod = it.disposalMethod
-                    )
-                }
-                eWasteDao.insertAllEWastes(eWastes)
+            if (response.success && response.data != null) {
+                val networkData = response.data.map { mapToEntity(it) }
+                eWasteDao.insertAllEWastes(networkData)
             }
         } catch (e: Exception) {
-            // Handle error
+            // Tangani error, misal tidak ada koneksi internet
+            e.printStackTrace()
         }
     }
 
-    suspend fun getEWasteCategories(): Result<List<String>> {
-        return try {
-            val response = apiService.getEWasteCategories()
-            if (response.success) {
-                Result.success(response.data.map { it.name })
-            } else {
-                Result.failure(Exception(response.message))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    private fun mapToEntity(eWaste: EWaste): EWasteEntity {
+        return EWasteEntity(
+            id = eWaste.id.toString(),
+            name = eWaste.name,
+            category = eWaste.category,
+            description = eWaste.description,
+            imageUrl = eWaste.imageUrl,
+            disposalMethod = eWaste.disposalMethod
+        )
     }
 }

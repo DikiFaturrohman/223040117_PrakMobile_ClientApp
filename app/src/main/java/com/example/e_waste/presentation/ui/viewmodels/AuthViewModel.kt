@@ -2,8 +2,9 @@ package com.example.e_waste.presentation.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.e_waste.data.entity.UserEntity
 import com.example.e_waste.data.repository.UserRepository
+import com.example.e_waste.domain.model.LoginRequest
+import com.example.e_waste.domain.model.RegisterRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,10 +18,7 @@ data class AuthState(
     val error: String? = null,
     val registrationSuccess: Boolean = false,
     val loginSuccess: Boolean = false,
-    val otpSent: Boolean = false,
-    val otpVerified: Boolean = false,
-    val passwordResetSuccess: Boolean = false,
-    val loggedInUserEmail: String? = null // To hold email for OTP flows
+    val loggedInUserEmail: String? = null
 )
 
 @HiltViewModel
@@ -32,7 +30,7 @@ class AuthViewModel @Inject constructor(
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
     fun resetAuthState() {
-        _authState.value = AuthState(loggedInUserEmail = _authState.value.loggedInUserEmail) // Keep email if needed for next step
+        _authState.update { it.copy(isLoading = false, error = null, registrationSuccess = false, loginSuccess = false) }
     }
 
     fun clearError() {
@@ -42,19 +40,15 @@ class AuthViewModel @Inject constructor(
     fun register(name: String, email: String, phone: String, password: String) {
         viewModelScope.launch {
             _authState.update { it.copy(isLoading = true, error = null) }
-            val result = userRepository.registerUser(name, email, password, phone)
+            // Buat objek RegisterRequest
+            val request = RegisterRequest(name = name, email = email, phone = phone, password = password)
+            val result = userRepository.register(request)
             result.fold(
                 onSuccess = {
-                    _authState.update {
-                        it.copy(
-                            isLoading = false,
-                            registrationSuccess = true,
-                            loggedInUserEmail = email // Store email for OTP verification
-                        )
-                    }
+                    _authState.update { it.copy(isLoading = false, registrationSuccess = true) }
                 },
                 onFailure = { e ->
-                    _authState.update { it.copy(isLoading = false, error = e.message ?: "Registration failed") }
+                    _authState.update { it.copy(isLoading = false, error = e.message ?: "Registrasi gagal") }
                 }
             )
         }
@@ -63,61 +57,28 @@ class AuthViewModel @Inject constructor(
     fun login(email: String, password: String) {
         viewModelScope.launch {
             _authState.update { it.copy(isLoading = true, error = null) }
-            val result = userRepository.login(email, password)
+            // Buat objek LoginRequest
+            val request = LoginRequest(email = email, password = password)
+            val result = userRepository.login(request)
             result.fold(
-                onSuccess = { token -> // Assuming token is success indicator for now
-                    // Here you would typically save the token
+                onSuccess = {
+                    // Jika login API berhasil, repository sudah menyimpan token.
+                    // ViewModel hanya perlu update UI state.
                     _authState.update { it.copy(isLoading = false, loginSuccess = true, loggedInUserEmail = email) }
                 },
                 onFailure = { e ->
-                    _authState.update { it.copy(isLoading = false, error = e.message ?: "Login failed") }
+                    _authState.update { it.copy(isLoading = false, error = e.message ?: "Login gagal") }
                 }
             )
         }
     }
 
-    fun sendOtp(email: String) {
+    fun logout() {
         viewModelScope.launch {
-            _authState.update { it.copy(isLoading = true, error = null) }
-            val result = userRepository.sendOtp(email)
-            result.fold(
-                onSuccess = {
-                    _authState.update { it.copy(isLoading = false, otpSent = true, loggedInUserEmail = email) }
-                },
-                onFailure = { e ->
-                    _authState.update { it.copy(isLoading = false, error = e.message ?: "Failed to send OTP") }
-                }
-            )
-        }
-    }
-
-    fun verifyOtp(email: String, otp: String) {
-        viewModelScope.launch {
-            _authState.update { it.copy(isLoading = true, error = null) }
-            val result = userRepository.verifyOtp(email, otp)
-            result.fold(
-                onSuccess = {
-                    _authState.update { it.copy(isLoading = false, otpVerified = true) }
-                },
-                onFailure = { e ->
-                    _authState.update { it.copy(isLoading = false, error = e.message ?: "OTP verification failed") }
-                }
-            )
-        }
-    }
-
-    fun resetPassword(email: String, newPassword: String) {
-        viewModelScope.launch {
-            _authState.update { it.copy(isLoading = true, error = null) }
-            val result = userRepository.resetPassword(email, newPassword)
-            result.fold(
-                onSuccess = {
-                    _authState.update { it.copy(isLoading = false, passwordResetSuccess = true) }
-                },
-                onFailure = { e ->
-                    _authState.update { it.copy(isLoading = false, error = e.message ?: "Password reset failed") }
-                }
-            )
+            // Panggil fungsi logout di repository
+            userRepository.logout()
+            // Reset semua state autentikasi
+            _authState.value = AuthState()
         }
     }
 }

@@ -9,19 +9,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+// Kembalikan data class EWasteState
 data class EWasteState(
-    val eWastes: List<EWasteEntity> = emptyList(),
-    val categories: List<String> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null,
-    val selectedCategory: String? = null
+    val error: String? = null
 )
 
 @HiltViewModel
@@ -29,57 +25,32 @@ class EWasteViewModel @Inject constructor(
     private val eWasteRepository: EWasteRepository
 ) : ViewModel() {
 
+    // Definisikan kembali _eWasteState
     private val _eWasteState = MutableStateFlow(EWasteState())
     val eWasteState: StateFlow<EWasteState> = _eWasteState.asStateFlow()
 
-    private val _selectedCategory = MutableStateFlow<String?>(null)
+    // Flow ini akan selalu mengambil data dari database lokal (cache)
+    val eWastes: StateFlow<List<EWasteEntity>> = eWasteRepository.getAllEWastes()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val eWastes: StateFlow<List<EWasteEntity>> = _selectedCategory.flatMapLatest { category ->
-        if (category == null || category == "All") {
-            eWasteRepository.getAllEWastes()
-        } else {
-            eWasteRepository.getEWastesByCategory(category)
-        }
-    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-
+    // Blok init akan dieksekusi saat ViewModel dibuat
     init {
-        loadCategories()
-        refreshEWastesData()
+        refreshDataFromApi()
     }
 
-    fun refreshEWastesData() {
+    private fun refreshDataFromApi() {
         viewModelScope.launch {
             _eWasteState.update { it.copy(isLoading = true, error = null) }
             try {
-                eWasteRepository.refreshEWastes() // Fetches from API and saves to DB
-                // Data is observed via the Flow from DAO, so no explicit update here is needed for eWastes list
+                eWasteRepository.refreshEWastes()
                 _eWasteState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
-                _eWasteState.update { it.copy(isLoading = false, error = e.message ?: "Failed to refresh e-waste data") }
+                _eWasteState.update { it.copy(isLoading = false, error = "Gagal mengambil data dari server.") }
             }
         }
     }
 
-    fun loadCategories() {
-        viewModelScope.launch {
-            _eWasteState.update { it.copy(isLoading = true, error = null) }
-            val result = eWasteRepository.getEWasteCategories()
-            result.fold(
-                onSuccess = { categoryNames ->
-                    _eWasteState.update { it.copy(isLoading = false, categories = listOf("All") + categoryNames) }
-                },
-                onFailure = { e ->
-                    _eWasteState.update { it.copy(isLoading = false, error = e.message ?: "Failed to load categories") }
-                }
-            )
-        }
-    }
-
-    fun selectCategory(category: String?) {
-        _selectedCategory.value = if (category == "All") null else category
-        _eWasteState.update { it.copy(selectedCategory = category) }
-    }
-
+    // Tambahkan kembali fungsi clearError()
     fun clearError() {
         _eWasteState.update { it.copy(error = null) }
     }

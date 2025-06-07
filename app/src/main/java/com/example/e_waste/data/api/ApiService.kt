@@ -1,41 +1,24 @@
 package com.example.e_waste.data.api
 
 import com.example.e_waste.domain.model.ApiResponse
-import com.example.e_waste.domain.model.CategoryResponse
-import com.example.e_waste.domain.model.EWasteResponse
+import com.example.e_waste.domain.model.EWaste
 import com.example.e_waste.domain.model.LoginRequest
-import com.example.e_waste.domain.model.OtpRequest
-import com.example.e_waste.domain.model.OtpResponse
 import com.example.e_waste.domain.model.RegisterRequest
-import com.example.e_waste.domain.model.ResetPasswordRequest
-import com.example.e_waste.domain.model.ResetPasswordResponse
-import com.example.e_waste.domain.model.TokenResponse
-import com.example.e_waste.domain.model.UserResponse
-import com.example.e_waste.domain.model.VerifyOtpRequest
-import com.example.e_waste.domain.model.VerifyOtpResponse
+import com.example.e_waste.domain.model.User
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 
 interface ApiService {
-    @POST("auth/register")
-    suspend fun register(@Body registerRequest: RegisterRequest): ApiResponse<UserResponse>
+    @POST("register")
+    suspend fun register(@Body registerRequest: RegisterRequest): ApiResponse<User>
 
-    @POST("auth/login")
-    suspend fun login(@Body loginRequest: LoginRequest): ApiResponse<TokenResponse>
+    @POST("login")
+    suspend fun login(@Body loginRequest: LoginRequest): ApiResponse<String> // Laravel mengirim token sebagai string di 'data'
 
-    @POST("auth/send-otp")
-    suspend fun sendOtp(@Body otpRequest: OtpRequest): ApiResponse<OtpResponse>
-
-    @POST("auth/verify-otp")
-    suspend fun verifyOtp(@Body verifyOtpRequest: VerifyOtpRequest): ApiResponse<VerifyOtpResponse>
-
-    @POST("auth/reset-password")
-    suspend fun resetPassword(@Body resetPasswordRequest: ResetPasswordRequest): ApiResponse<ResetPasswordResponse>
+    @POST("logout")
+    suspend fun logout(): ApiResponse<Any> // Tidak ada data spesifik yang dikembalikan
 
     @GET("ewaste")
-    suspend fun getEWastes(): ApiResponse<List<EWasteResponse>>
-
-    @GET("ewaste/categories")
-    suspend fun getEWasteCategories(): ApiResponse<List<CategoryResponse>>
+    suspend fun getEWastes(): ApiResponse<List<EWaste>>
 }
