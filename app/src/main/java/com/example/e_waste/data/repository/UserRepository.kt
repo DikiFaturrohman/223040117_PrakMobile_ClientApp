@@ -1,41 +1,27 @@
 package com.example.e_waste.data.repository
 
 import com.example.e_waste.data.api.ApiService
-import com.example.e_waste.data.dao.OtpDao
 import com.example.e_waste.data.dao.UserDao
-import com.example.e_waste.data.database.AppDatabase
 import com.example.e_waste.data.entity.UserEntity
 import com.example.e_waste.domain.model.LoginRequest
-import com.example.e_waste.domain.model.OtpRequest
 import com.example.e_waste.domain.model.RegisterRequest
-import com.example.e_waste.domain.model.ResetPasswordRequest
-import com.example.e_waste.domain.model.VerifyOtpRequest
 import javax.inject.Inject
 import javax.inject.Singleton
 
-// UserRepository.kt
 @Singleton
 class UserRepository @Inject constructor(
-    private val userDao: UserDao,
-    private val otpDao: OtpDao,
     private val apiService: ApiService,
-    private val appDatabase: AppDatabase
+    private val sessionManager: SessionManager,
+    private val userDao: UserDao // Masih kita gunakan untuk cache profil
 ) {
-    suspend fun registerUser(name: String, email: String, password: String, phone: String): Result<UserEntity> {
+    suspend fun register(registerRequest: RegisterRequest): Result<Unit> {
         return try {
-            val response = apiService.register(
-                RegisterRequest(name, email, password, phone)
-            )
-
-            if (response.success) {
-                val user = UserEntity(
-                    email = email,
-                    password = password,
-                    name = name,
-                    phone = phone
-                )
-                userDao.insertUser(user)
-                Result.success(user)
+            val response = apiService.register(registerRequest)
+            if (response.success && response.data != null) {
+                // Simpan data user ke database lokal sebagai cache
+                val user = response.data
+                userDao.insertUser(UserEntity(id = user.id.toString(), email = user.email, name = user.name, phone = user.phone, password = ""))
+                Result.success(Unit)
             } else {
                 Result.failure(Exception(response.message))
             }
@@ -44,87 +30,42 @@ class UserRepository @Inject constructor(
         }
     }
 
-    suspend fun login(email: String, password: String): Result<String> {
+    suspend fun login(loginRequest: LoginRequest): Result<Unit> {
         return try {
-            val response = apiService.login(
-                LoginRequest(email, password)
-            )
-
-            if (response.success) {
-                Result.success(response.data.token)
+            val response = apiService.login(loginRequest)
+            if (response.success && response.data != null) {
+                // Simpan token ke SessionManager
+                sessionManager.saveToken(response.data)
+                Result.success(Unit)
             } else {
                 Result.failure(Exception(response.message))
             }
         } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun logout(): Result<Unit> {
+        return try {
+            apiService.logout() // Panggil API logout
+            sessionManager.clearToken() // Hapus token dari session
+            Result.success(Unit)
+        } catch (e: Exception) {
+            // Bahkan jika API gagal, tetap hapus token lokal
+            sessionManager.clearToken()
             Result.failure(e)
         }
     }
 
     suspend fun getUserByEmail(email: String): UserEntity? {
-        return try {
-            userDao.getUserByEmail(email)
-        } catch (e: Exception) {
-            // Tangani error jika diperlukan, misalnya log atau return null
-            // Log.e("UserRepository", "Error getting user by email", e)
-            null
-        }
-    }
-
-    suspend fun sendOtp(email: String): Result<Boolean> {
-        return try {
-            val response = apiService.sendOtp(OtpRequest(email))
-
-            if (response.success) {
-                Result.success(true)
-            } else {
-                Result.failure(Exception(response.message))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun verifyOtp(email: String, otp: String): Result<Boolean> {
-        return try {
-            val response = apiService.verifyOtp(VerifyOtpRequest(email, otp))
-
-            if (response.success) {
-                Result.success(true)
-            } else {
-                Result.failure(Exception(response.message))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun resetPassword(email: String, newPassword: String): Result<Boolean> {
-        return try {
-            val response = apiService.resetPassword(
-                ResetPasswordRequest(email, newPassword)
-            )
-
-            if (response.success) {
-                // Update local database if user exists
-                val user = userDao.getUserByEmail(email)
-                if (user != null) {
-                    userDao.updateUser(user.copy(password = newPassword))
-                }
-                Result.success(true)
-            } else {
-                Result.failure(Exception(response.message))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        // Fungsi ini sekarang hanya mengambil dari cache lokal
+        return userDao.getUserByEmail(email)
     }
 
     suspend fun updateUserProfile(userEntity: UserEntity): Result<UserEntity> {
-        return try {
-            userDao.updateUser(userEntity)
-            Result.success(userEntity)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        // TODO: Buat endpoint API untuk update profil di Laravel & panggil di sini
+        // Untuk sekarang, kita hanya update di lokal
+        userDao.updateUser(userEntity)
+        return Result.success(userEntity)
     }
 }
