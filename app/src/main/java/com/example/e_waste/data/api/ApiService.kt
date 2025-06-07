@@ -4,6 +4,7 @@ import com.example.e_waste.domain.model.ApiResponse
 import com.example.e_waste.domain.model.EWaste
 import com.example.e_waste.domain.model.LoginRequest
 import com.example.e_waste.domain.model.RegisterRequest
+import com.example.e_waste.domain.model.Tip
 import com.example.e_waste.domain.model.User
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -21,4 +22,7 @@ interface ApiService {
 
     @GET("ewaste")
     suspend fun getEWastes(): ApiResponse<List<EWaste>>
+
+    @GET("tips")
+    suspend fun getTips(): ApiResponse<List<Tip>>
 }
