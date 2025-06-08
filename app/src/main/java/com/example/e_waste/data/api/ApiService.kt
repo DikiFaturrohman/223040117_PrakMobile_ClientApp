@@ -25,4 +25,7 @@ interface ApiService {
 
     @GET("tips")
     suspend fun getTips(): ApiResponse<List<Tip>>
+
+    @GET("profile") // Endpoint baru
+    suspend fun getProfile(): ApiResponse<User>
 }

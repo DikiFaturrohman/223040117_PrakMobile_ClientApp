@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.example.e_waste.data.entity.UserEntity
+import kotlinx.coroutines.flow.Flow
 
 // UserDao.kt
 @Dao
@@ -21,4 +22,11 @@ interface UserDao {
 
     @Update
     suspend fun updateUser(user: UserEntity)
+
+    // TAMBAHKAN FUNGSI BARU INI
+    @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
+    fun getUserByEmailFlow(email: String): Flow<UserEntity?>
+
+    @Query("SELECT * FROM users LIMIT 1")
+    suspend fun getFirstUser(): UserEntity?
 }
