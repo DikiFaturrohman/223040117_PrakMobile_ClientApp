@@ -10,30 +10,38 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+// Skema warna untuk Tema Terang (Light Mode)
+private val LightColorScheme = lightColorScheme(
+    primary = Black,
+    onPrimary = White,
+    secondary = DarkGray,
+    onSecondary = White,
+    background = LightGray,
+    surface = White,
+    onBackground = Black,
+    onSurface = Black,
+    onSurfaceVariant = Gray,
+    outline = Gray.copy(alpha = 0.5f)
 )
 
-// Definisikan LightColorScheme menggunakan warna kustom kita
-private val LightColorScheme = lightColorScheme(
-    primary = EWasteGreen,
-    onPrimary = EWasteWhite,
-    secondary = PurpleGrey40,
-    tertiary = Pink40,
-    background = EWasteGreen,      // Latar belakang utama (hijau)
-    surface = EWasteWhite,         // Warna kartu (putih)
-    onBackground = EWasteWhite,    // Teks di atas latar belakang utama
-    onSurface = EWasteBlack,       // Teks di atas kartu
-    onSurfaceVariant = EWasteGray  // Warna untuk teks sekunder/abu-abu
+// Skema warna untuk Tema Gelap (Dark Mode)
+private val DarkColorScheme = darkColorScheme(
+    primary = White,
+    onPrimary = Black,
+    secondary = LightGray,
+    onSecondary = Black,
+    background = Black,
+    surface = DarkGray,
+    onBackground = White,
+    onSurface = White,
+    onSurfaceVariant = Gray,
+    outline = Gray.copy(alpha = 0.5f)
 )
 
 @Composable
 fun EwasteTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = false, // Dinonaktifkan agar tema kustom kita yang dipakai
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -41,9 +49,8 @@ fun EwasteTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
-        else -> LightColorScheme // Gunakan LightColorScheme kustom kita
+        else -> LightColorScheme
     }
 
     MaterialTheme(

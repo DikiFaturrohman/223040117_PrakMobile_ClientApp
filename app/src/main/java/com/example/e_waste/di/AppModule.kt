@@ -31,7 +31,6 @@ object AppModule {
             "ewaste_db"
         )
             .fallbackToDestructiveMigration()
-            // Hapus callback untuk seeding data, karena data sekarang dari API
             .build()
     }
 
@@ -43,9 +42,15 @@ object AppModule {
     @Singleton
     fun provideEWasteDao(appDatabase: AppDatabase): EWasteDao = appDatabase.eWasteDao()
 
+    // ================== PERBAIKAN DI SINI ==================
     @Provides
     @Singleton
-    fun provideSessionManager(): SessionManager = SessionManager()
+    // Tambahkan @ApplicationContext context: Context sebagai parameter
+    fun provideSessionManager(@ApplicationContext context: Context): SessionManager {
+        // Teruskan context saat membuat SessionManager
+        return SessionManager(context)
+    }
+    // ========================================================
 
     @Provides
     @Singleton
