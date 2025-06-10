@@ -38,7 +38,7 @@ class EWasteViewModel @Inject constructor(
         refreshDataFromApi()
     }
 
-    private fun refreshDataFromApi() {
+     fun refreshDataFromApi() {
         viewModelScope.launch {
             _eWasteState.update { it.copy(isLoading = true, error = null) }
             try {
