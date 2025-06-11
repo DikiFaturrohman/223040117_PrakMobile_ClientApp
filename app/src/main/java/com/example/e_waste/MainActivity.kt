@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/e_waste/MainActivity.kt
 package com.example.e_waste
 
 import android.os.Bundle
@@ -31,6 +32,7 @@ object AppDestinations {
     const val CATEGORY_SELECTION_ROUTE = "category_selection_route"
     const val JENIS_SAMPAH_KECIL_ROUTE = "jenis_sampah_kecil_route"
     const val JENIS_SAMPAH_BESAR_ROUTE = "jenis_sampah_besar_route"
+    const val CHANGE_PASSWORD_ROUTE = "change_password_route"
 }
 
 @AndroidEntryPoint
@@ -50,26 +52,23 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
+
+
 @Composable
 fun EWasteApp(
     navController: NavHostController = rememberNavController()
 ) {
     val context = LocalContext.current
-    // ViewModel ini diambil di level atas untuk di-pass ke MainContainerScreen
-    // agar bisa menangani logout.
     val authViewModel: AuthViewModel = hiltViewModel()
 
-    // NavHost adalah pengatur utama semua layar di aplikasi
     NavHost(
         navController = navController,
         startDestination = AppDestinations.LOGIN_ROUTE
     ) {
-        // Rute untuk layar Login
         composable(AppDestinations.LOGIN_ROUTE) {
             LoginScreen(
                 onLoginSuccess = {
-                    // Jika login berhasil, navigasi ke layar utama (yang berisi bottom nav)
-                    // dan hapus semua layar sebelumnya dari tumpukan (back stack).
                     navController.navigate(AppDestinations.MAIN_ROUTE) {
                         popUpTo(AppDestinations.LOGIN_ROUTE) { inclusive = true }
                     }
@@ -80,12 +79,10 @@ fun EWasteApp(
             )
         }
 
-        // Rute untuk layar Register
         composable(AppDestinations.REGISTER_ROUTE) {
             RegisterScreen(
-                onNavigateToLogin = { navController.popBackStack() }, // Kembali ke layar sebelumnya (Login)
+                onNavigateToLogin = { navController.popBackStack() },
                 onRegisterSuccess = {
-                    // Tampilkan pesan dan arahkan kembali ke Login untuk masuk
                     Toast.makeText(context, "Registrasi berhasil! Silakan login.", Toast.LENGTH_LONG).show()
                     navController.navigate(AppDestinations.LOGIN_ROUTE) {
                         popUpTo(AppDestinations.LOGIN_ROUTE) { inclusive = true }
@@ -95,14 +92,11 @@ fun EWasteApp(
             )
         }
 
-        // Rute untuk layar utama setelah login
         composable(AppDestinations.MAIN_ROUTE) {
-            // Memanggil MainContainerScreen yang menjadi "rumah" bagi BottomNavBar
-            // dan semua tab-nya.
             MainContainerScreen(
                 mainNavController = navController,
                 authViewModel = authViewModel
             )
         }
-    }
+}
 }

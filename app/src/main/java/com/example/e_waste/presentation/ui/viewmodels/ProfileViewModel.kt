@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/e_waste/presentation/ui/viewmodels/ProfileViewModel.kt
 package com.example.e_waste.presentation.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
@@ -14,7 +15,8 @@ data class ProfileState(
     val user: UserEntity? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
-    val updateSuccess: Boolean = false
+    val updateSuccess: Boolean = false // Tetap dipertahankan untuk kemungkinan feedback dari layar lain
+    // nameInput, phoneInput, passwordInput dihapus karena tidak lagi di layar ini
 )
 
 @HiltViewModel
@@ -27,26 +29,27 @@ class ProfileViewModel @Inject constructor(
     val profileState: StateFlow<ProfileState> = _profileState.asStateFlow()
 
     init {
-        // Saat ViewModel dibuat, langsung muat profil user
         loadUserProfile()
     }
 
     fun loadUserProfile() {
-        // Ambil email dari sesi yang tersimpan
         val userEmail = sessionManager.getEmail()
         if (userEmail == null) {
             _profileState.update { it.copy(error = "Sesi tidak ditemukan, silakan login ulang.") }
             return
         }
 
-        // Mulai mengamati data dari database LOKAL berdasarkan email yang benar
         viewModelScope.launch {
             userRepository.getUserByEmailFlow(userEmail).collect { userFromDb ->
-                _profileState.update { it.copy(user = userFromDb) }
+                _profileState.update { currentState ->
+                    currentState.copy(
+                        user = userFromDb,
+                        // nameInput, phoneInput, passwordInput tidak lagi diupdate dari sini
+                    )
+                }
             }
         }
 
-        // Lakukan juga refresh dari SERVER di background
         viewModelScope.launch {
             _profileState.update { it.copy(isLoading = true) }
             val refreshResult = userRepository.refreshUserProfile()
@@ -59,12 +62,19 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun updateUserProfile(name: String, phone: String) {
+    // Fungsi setter untuk input di layar editor (tetap dipertahankan untuk kemungkinan layar lain)
+    fun setNameInput(name: String) { /* tidak digunakan langsung di layar ini */ }
+    fun setPhoneInput(phone: String) { /* tidak digunakan langsung di layar ini */ }
+    fun setPasswordInput(password: String) { /* tidak digunakan langsung di layar ini */ }
+
+
+    fun updateUserProfile(name: String, phone: String /*, password: String? = null */) {
         viewModelScope.launch {
             val currentUser = _profileState.value.user ?: return@launch
             _profileState.update { it.copy(isLoading = true, error = null, updateSuccess = false) }
 
             val updatedUser = currentUser.copy(name = name, phone = phone)
+
             val result = userRepository.updateUserProfile(updatedUser)
 
             result.fold(

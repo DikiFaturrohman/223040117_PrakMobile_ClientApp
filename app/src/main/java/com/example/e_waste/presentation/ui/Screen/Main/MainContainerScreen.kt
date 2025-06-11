@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/e_waste/presentation/ui/Screen/Main/MainContainerScreen.kt
 package com.example.e_waste.presentation.ui.Screen.Main
 
 import androidx.compose.foundation.layout.padding
@@ -20,12 +19,11 @@ import com.example.e_waste.presentation.navigation.BottomNavItem
 import com.example.e_waste.presentation.ui.Screen.Home.HomeScreen
 import com.example.e_waste.presentation.ui.Screen.Tips.TipsScreen
 import com.example.e_waste.presentation.ui.Screen.User.Profile.ProfileScreen
-import com.example.e_waste.presentation.ui.Screen.KategoriSampah.KategoriSampahScreen // Import KategoriSampahScreen
 import com.example.e_waste.presentation.ui.viewmodels.AuthViewModel
 import com.example.e_waste.presentation.ui.viewmodels.EWasteViewModel
-import com.example.e_waste.presentation.ui.Screen.JenisSampahKecil.JenisSampahKecilScreen // Import JenisSampahKecilScreen
-import com.example.e_waste.presentation.ui.Screen.JenisSampahBesar.JenisSampahBesarScreen // <<< IMPORT JENIS SAMPAH BESAR >>>
-
+import com.example.e_waste.presentation.ui.Screen.JenisSampahKecil.JenisSampahKecilScreen
+import com.example.e_waste.presentation.ui.Screen.JenisSampahBesar.JenisSampahBesarScreen
+import com.example.e_waste.presentation.ui.Screen.KategoriSampah.KategoriSampahScreen
 
 @Composable
 fun MainContainerScreen(
@@ -64,25 +62,48 @@ fun MainContainerScreen(
                 TipsScreen()
             }
             composable(BottomNavItem.Profile.route) {
-                ProfileScreen()
+                // Perbaikan di sini: Hanya sertakan parameter yang diterima oleh ProfileScreen yang baru
+                ProfileScreen(
+                    onNavigateBack = { bottomNavController.popBackStack() }, // Untuk tombol back
+                    onLogout = { // Implementasi logout di sini
+                        authViewModel.logout()
+                        mainNavController.navigate(AppDestinations.LOGIN_ROUTE) {
+                            popUpTo(AppDestinations.MAIN_ROUTE) { inclusive = true }
+                        }
+                    }
+                )
+            }
+            composable(BottomNavItem.Profile.route) {
+                ProfileScreen(
+                    onNavigateBack = { bottomNavController.popBackStack() },
+                    onLogout = {
+                        // Menggunakan authViewModel dan mainNavController secara eksplisit
+                        authViewModel.logout()
+                        mainNavController.navigate(AppDestinations.LOGIN_ROUTE) {
+                            popUpTo(AppDestinations.MAIN_ROUTE) { inclusive = true }
+                        }
+                    }
+                )
             }
             composable(AppDestinations.CATEGORY_SELECTION_ROUTE) {
                 KategoriSampahScreen(
-                    onNavigateBack = { bottomNavController.popBackStack() }, // Tombol back TopAppBar KategoriSampah akan ke Home
-                    onNavigateToJenisSampahKecil = { bottomNavController.navigate(AppDestinations.JENIS_SAMPAH_KECIL_ROUTE) }, // Implementasi untuk tombol "Lanjut" (Small)
-                    onNavigateToJenisSampahBesar = { bottomNavController.navigate(AppDestinations.JENIS_SAMPAH_BESAR_ROUTE) }, // <<< IMPLEMENTASI BARU UNTUK TOMBOL "LANJUT" (LARGE) >>>
+                    onNavigateBack = {
+                        eWasteViewModel.setCategoryFilter(null)
+                        bottomNavController.popBackStack()
+                    },
+                    onNavigateToJenisSampahKecil = { bottomNavController.navigate(AppDestinations.JENIS_SAMPAH_KECIL_ROUTE) },
+                    onNavigateToJenisSampahBesar = { bottomNavController.navigate(AppDestinations.JENIS_SAMPAH_BESAR_ROUTE) },
                     eWasteViewModel = eWasteViewModel
                 )
             }
             composable(AppDestinations.JENIS_SAMPAH_KECIL_ROUTE) {
                 JenisSampahKecilScreen(
-                    onNavigateBack = { bottomNavController.popBackStack() } // Tombol back akan kembali ke KategoriSampahScreen
+                    onNavigateBack = { bottomNavController.popBackStack() }
                 )
             }
-            // <<< TAMBAHKAN COMPOSABLE BARU UNTUK JENIS SAMPAH BESAR >>>
             composable(AppDestinations.JENIS_SAMPAH_BESAR_ROUTE) {
                 JenisSampahBesarScreen(
-                    onNavigateBack = { bottomNavController.popBackStack() } // Tombol back akan kembali ke KategoriSampahScreen
+                    onNavigateBack = { bottomNavController.popBackStack() }
                 )
             }
         }
