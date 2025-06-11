@@ -27,7 +27,10 @@ import dagger.hilt.android.AndroidEntryPoint
 object AppDestinations {
     const val LOGIN_ROUTE = "login"
     const val REGISTER_ROUTE = "register"
-    const val MAIN_ROUTE = "main_route" // Nama diganti untuk menghindari konflik
+    const val MAIN_ROUTE = "main_route"
+    const val CATEGORY_SELECTION_ROUTE = "category_selection_route"
+    const val JENIS_SAMPAH_KECIL_ROUTE = "jenis_sampah_kecil_route"
+    const val JENIS_SAMPAH_BESAR_ROUTE = "jenis_sampah_besar_route"
 }
 
 @AndroidEntryPoint

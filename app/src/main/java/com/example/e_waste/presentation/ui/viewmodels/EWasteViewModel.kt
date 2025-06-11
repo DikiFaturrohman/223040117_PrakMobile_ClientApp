@@ -9,15 +9,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// Kembalikan data class EWasteState
 data class EWasteState(
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val selectedCategory: String? = null // Add this to hold the selected category
 )
 
 @HiltViewModel
@@ -25,32 +26,45 @@ class EWasteViewModel @Inject constructor(
     private val eWasteRepository: EWasteRepository
 ) : ViewModel() {
 
-    // Definisikan kembali _eWasteState
     private val _eWasteState = MutableStateFlow(EWasteState())
     val eWasteState: StateFlow<EWasteState> = _eWasteState.asStateFlow()
 
-    // Flow ini akan selalu mengambil data dari database lokal (cache)
-    val eWastes: StateFlow<List<EWasteEntity>> = eWasteRepository.getAllEWastes()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    // A MutableStateFlow to hold the currently selected category for filtering
+    private val _selectedCategoryFilter = MutableStateFlow<String?>(null)
 
-    // Blok init akan dieksekusi saat ViewModel dibuat
+    // This flow will now react to changes in _selectedCategoryFilter
+    val eWastes: StateFlow<List<EWasteEntity>> = combine(
+        _selectedCategoryFilter,
+        eWasteRepository.getAllEWastes() // Always observe all e-wastes from DB
+    ) { selectedCategory, allEWastes ->
+        if (selectedCategory.isNullOrBlank() || selectedCategory == "All") {
+            allEWastes // No filter applied, return all
+        } else {
+            allEWastes.filter { it.category == selectedCategory } // Filter by category
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     init {
         refreshDataFromApi()
     }
 
-     fun refreshDataFromApi() {
+    fun refreshDataFromApi() {
         viewModelScope.launch {
             _eWasteState.update { it.copy(isLoading = true, error = null) }
             try {
                 eWasteRepository.refreshEWastes()
                 _eWasteState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
-                _eWasteState.update { it.copy(isLoading = false, error = "Gagal mengambil data dari server.") }
+                _eWasteState.update { it.copy(isLoading = false, error = "Gagal mengambil data dari server: ${e.message}") }
             }
         }
     }
 
-    // Tambahkan kembali fungsi clearError()
+    fun setCategoryFilter(category: String?) {
+        _selectedCategoryFilter.value = category
+        _eWasteState.update { it.copy(selectedCategory = category) }
+    }
+
     fun clearError() {
         _eWasteState.update { it.copy(error = null) }
     }

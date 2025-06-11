@@ -42,10 +42,15 @@ fun HomeScreen(
     authViewModel: AuthViewModel,
     profileViewModel: ProfileViewModel = hiltViewModel(),
     eWasteViewModel: EWasteViewModel = hiltViewModel(),
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    // >>> TAMBAHKAN PARAMETER INI <<<
+    onNavigateToCategorySelection: () -> Unit
 ) {
     val eWastes by eWasteViewModel.eWastes.collectAsStateWithLifecycle()
     val profileState by profileViewModel.profileState.collectAsStateWithLifecycle()
+
+    // Untuk mengatasi "Unresolved reference 'fillParentMaxSize'" dari pertanyaan sebelumnya
+    val eWasteState by eWasteViewModel.eWasteState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         profileViewModel.loadUserProfile()
@@ -79,7 +84,10 @@ fun HomeScreen(
             // Our Services Section
             item {
                 Spacer(modifier = Modifier.height(18.dp)) // Memberi jarak dari card poin ke layanan
-                OurServicesSection()
+                OurServicesSection(
+                    // >>> TERUSKAN LAMBDA NAVIGASI KE OurServicesSection <<<
+                    onNavigateToCategorySelection = onNavigateToCategorySelection
+                )
             }
 
             // E-Waste Information Section
@@ -95,11 +103,15 @@ fun HomeScreen(
                 )
             }
 
+            // Bagian untuk menampilkan data e-waste atau pesan kosong
             if (eWastes.isEmpty()) {
                 item {
                     Spacer(modifier = Modifier.height(16.dp)) // Jarak jika tidak ada data
-                    Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Tidak ada data e-waste saat ini.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { // Diperbaiki dari fillParentMaxSize()
+                        Text(
+                            "Tidak ada data e-waste saat ini${if (eWasteState.selectedCategory != null) " untuk kategori '${eWasteState.selectedCategory}'" else ""}.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             } else {
@@ -239,7 +251,9 @@ fun ElectronicPointCard(
 }
 
 @Composable
-fun OurServicesSection() {
+fun OurServicesSection(
+    onNavigateToCategorySelection: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -259,12 +273,12 @@ fun OurServicesSection() {
             ServiceItem(
                 icon = Icons.Default.LocalShipping,
                 label = "Pick a Waste",
-                onClick = { /* TODO: Handle Waste & get Point click */ }
+                onClick = onNavigateToCategorySelection
             )
             ServiceItem(
                 icon = Icons.Default.History,
                 label = "My History",
-                onClick = { /* TODO: Handle Tips click */ }
+                onClick = { /* TODO: Handle History click */ }
             )
             ServiceItem(
                 icon = Icons.Default.Headphones,
